@@ -1,6 +1,6 @@
 {
   "name": "opentelemetry-instrumentation-rhea",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "OpenTelemetry auto-instrumentation for rhea AMQP 1.0 client",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -24,6 +24,8 @@
     "node": "^18.19.0 || >=20.6.0"
   },
   "scripts": {
+    "version:update": "node scripts/version-update.js",
+    "prebuild": "npm run version:update",
     "build": "tsc",
     "clean": "rimraf build",
     "test": "mocha",
@@ -31,7 +33,7 @@
     "lint:fix": "eslint --fix",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" && eslint --fix",
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\" && eslint",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build && npm test"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.0.0"

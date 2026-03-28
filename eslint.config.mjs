@@ -3,7 +3,7 @@ import prettier from 'eslint-config-prettier';
 
 export default tseslint.config(
   {
-    ignores: ['build/', 'node_modules/', 'examples/'],
+    ignores: ['build/', 'node_modules/', 'examples/', 'scripts/'],
   },
   ...tseslint.configs.recommended,
   prettier,

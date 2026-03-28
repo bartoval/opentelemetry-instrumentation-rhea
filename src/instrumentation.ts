@@ -26,16 +26,15 @@ import {
   ensureApplicationProperties,
 } from './utils';
 
-import { version as VERSION } from '../package.json';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
-const INSTRUMENTATION_NAME = 'opentelemetry-instrumentation-rhea';
 const RHEA_MODULE_NAME = 'rhea';
 const RHEA_LINK_MODULE = 'rhea/lib/link.js';
 const SUPPORTED_VERSIONS = ['>=1.0.0 <4'];
 
 export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentationConfig> {
   constructor(config: RheaInstrumentationConfig = {}) {
-    super(INSTRUMENTATION_NAME, VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   protected init() {

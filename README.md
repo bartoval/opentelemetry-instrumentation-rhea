@@ -35,13 +35,13 @@ import rhea from 'rhea';
 
 ## Configuration
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `enabled` | `boolean` | `true` | Enable/disable the instrumentation |
-| `publishHook` | `(span, info) => void` | - | Called before a publish span ends. Use to add custom attributes. |
-| `consumeHook` | `(span, info) => void` | - | Called when a message is consumed, before the user handler runs. |
-| `consumeEndHook` | `(span, info) => void` | - | Called when a consume span ends. |
-| `useLinksForConsume` | `boolean` | `false` | If `true`, consumer spans are new root traces with a link to the producer span, instead of being children. |
+| Option               | Type                   | Default | Description                                                                                                |
+| -------------------- | ---------------------- | ------- | ---------------------------------------------------------------------------------------------------------- |
+| `enabled`            | `boolean`              | `true`  | Enable/disable the instrumentation                                                                         |
+| `publishHook`        | `(span, info) => void` | -       | Called before a publish span ends. Use to add custom attributes.                                           |
+| `consumeHook`        | `(span, info) => void` | -       | Called when a message is consumed, before the user handler runs.                                           |
+| `consumeEndHook`     | `(span, info) => void` | -       | Called when a consume span ends.                                                                           |
+| `useLinksForConsume` | `boolean`              | `false` | If `true`, consumer spans are new root traces with a link to the producer span, instead of being children. |
 
 ### Hook info objects
 
@@ -60,18 +60,18 @@ Follows [OpenTelemetry Messaging Semantic Conventions](https://opentelemetry.io/
 
 ### Attributes
 
-| Attribute | Value |
-|-----------|-------|
-| `messaging.system` | `amqp` |
-| `messaging.operation.name` | `publish` or `receive` |
-| `messaging.operation.type` | `publish` or `receive` |
-| `messaging.destination.name` | Target/source address |
-| `messaging.message.id` | `message.message_id` (if present) |
+| Attribute                           | Value                                 |
+| ----------------------------------- | ------------------------------------- |
+| `messaging.system`                  | `amqp`                                |
+| `messaging.operation.name`          | `publish` or `receive`                |
+| `messaging.operation.type`          | `publish` or `receive`                |
+| `messaging.destination.name`        | Target/source address                 |
+| `messaging.message.id`              | `message.message_id` (if present)     |
 | `messaging.message.conversation_id` | `message.correlation_id` (if present) |
-| `messaging.message.body.size` | Payload size in bytes |
-| `network.peer.address` | Connection host |
-| `network.peer.port` | Connection port |
-| `messaging.client.id` | Container ID |
+| `messaging.message.body.size`       | Payload size in bytes                 |
+| `network.peer.address`              | Connection host                       |
+| `network.peer.port`                 | Connection port                       |
+| `messaging.client.id`               | Container ID                          |
 
 ## Context propagation
 
