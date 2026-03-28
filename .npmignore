@@ -1,0 +1,8 @@
+test/
+examples/
+.github/
+.eslintrc.js
+tsconfig.json
+*.ts
+!*.d.ts
+.gitignore

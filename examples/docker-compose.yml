@@ -1,0 +1,10 @@
+services:
+  artemis:
+    image: apache/activemq-artemis:latest
+    ports:
+      - "5673:5672"
+      - "8162:8161"
+    environment:
+      ARTEMIS_USER: admin
+      ARTEMIS_PASSWORD: admin
+      ARTEMIS_MAX_DISK_USAGE: "99"
