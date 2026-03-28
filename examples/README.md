@@ -7,6 +7,7 @@
 | 03 | [ActiveMQ Artemis](./03-activemq-artemis.ts) | Docker | Real broker compatibility |
 | 04 | [Custom hooks](./04-custom-hooks.ts) | None (in-process) | Enriching spans with app data |
 | 05 | [Express to AMQP](./05-express-to-amqp.ts) | None (in-process) | Full HTTP-to-AMQP distributed trace |
+| 06 | [RabbitMQ](./06-rabbitmq.ts) | RabbitMQ (Docker) | RabbitMQ with AMQP 1.0 plugin |
 
 ## Prerequisites
 
@@ -95,3 +96,19 @@ HTTP POST /order
       └── orders-queue receive
           └── process-order
 ```
+
+## 06 - RabbitMQ
+
+Requires RabbitMQ with the AMQP 1.0 plugin enabled:
+
+```bash
+rabbitmq-plugins enable rabbitmq_amqp1_0
+```
+
+Run the example:
+
+```bash
+npx ts-node examples/06-rabbitmq.ts
+```
+
+**Output**: Spans showing send/receive through RabbitMQ using the AMQP 1.0 protocol.
