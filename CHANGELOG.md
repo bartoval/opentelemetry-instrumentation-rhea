@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.2.0
+
+### Breaking changes
+
+- Remove `moduleExports` from `RheaPublishInfo` and `RheaConsumeInfo` hook interfaces to prevent internal type leak
+
+### Improvements
+
+- Move internal types (`RheaLinkModule`, `DispatchFunction`) to `internal-types.ts` per OTel guidelines
+- Add RabbitMQ AMQP 1.0 example
+- Improve README with real usage examples (Azure Service Bus, rhea direct)
+- Add "Why not amqplib" section to README
+- Improve npm discoverability with better keywords and description
+- Add npm downloads badge
+- Auto-generate `version.ts` from `package.json` at build time
+
 ## 0.1.1
 
 - Fix `package.json` resolution when installed as npm dependency

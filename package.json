@@ -1,6 +1,6 @@
 {
   "name": "opentelemetry-instrumentation-rhea",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "OpenTelemetry instrumentation for rhea (AMQP 1.0) with automatic publish/consume tracing and W3C context propagation",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -26,6 +26,7 @@
     "node": "^18.19.0 || >=20.6.0"
   },
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks",
     "version:update": "node scripts/version-update.js",
     "prebuild": "npm run version:update",
     "build": "tsc",
