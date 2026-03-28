@@ -1,23 +1,7 @@
 import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import type { Span } from '@opentelemetry/api';
-import type { Sender, Receiver, Connection, Message, Delivery, EventContext } from 'rhea';
-
-// --- Internal types (not part of public API) ---
-
-export type DispatchFunction = (name: string, eventContext?: EventContext) => boolean;
-
-export interface RheaLinkModule {
-  Sender: {
-    prototype: Pick<Sender, 'send'>;
-  };
-  Receiver: {
-    prototype: {
-      dispatch: DispatchFunction;
-    };
-  };
-}
-
-// --- Public API types ---
+import type { Sender, Receiver, Connection, Message, Delivery } from 'rhea';
+import type { RheaLinkModule } from './internal-types';
 
 export interface RheaPublishInfo {
   moduleExports: RheaLinkModule;

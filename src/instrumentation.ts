@@ -14,7 +14,8 @@ import {
 } from '@opentelemetry/api';
 import type { Link } from '@opentelemetry/api';
 import type { Sender, Receiver, Message, EventContext } from 'rhea';
-import type { RheaInstrumentationConfig, RheaLinkModule, DispatchFunction } from './types';
+import type { RheaInstrumentationConfig } from './types';
+import type { RheaLinkModule, DispatchFunction } from './internal-types';
 import {
   getDestinationAddress,
   getPublishSpanName,
