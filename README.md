@@ -85,9 +85,9 @@ sender.on('sendable', () => {
 
 ### Hook info objects
 
-**`RheaPublishInfo`**: `{ moduleExports, msg, sender, connection }`
+**`RheaPublishInfo`**: `{ msg, sender, connection }`
 
-**`RheaConsumeInfo`**: `{ moduleExports, msg, receiver, delivery, connection }`
+**`RheaConsumeInfo`**: `{ msg, receiver, delivery, connection }`
 
 ## Semantic conventions
 

@@ -101,7 +101,7 @@ export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentation
     }
   }
 
-  private _getSendPatch(moduleExports: RheaLinkModule) {
+  private _getSendPatch(_moduleExports: RheaLinkModule) {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const instrumentation = this;
 
@@ -166,7 +166,7 @@ export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentation
         }
 
         try {
-          publishHook?.(span, { moduleExports, msg, sender, connection });
+          publishHook?.(span, { msg, sender, connection });
         } catch (hookError) {
           instrumentation._diag.error('publishHook error', hookError);
         }
@@ -192,7 +192,7 @@ export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentation
     };
   }
 
-  private _getConsumePatch(moduleExports: RheaLinkModule) {
+  private _getConsumePatch(_moduleExports: RheaLinkModule) {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const instrumentation = this;
 
@@ -282,7 +282,7 @@ export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentation
           span.setAttribute('messaging.client.id', containerId);
         }
 
-        const consumeInfo = { moduleExports, msg, receiver, delivery, connection };
+        const consumeInfo = { msg, receiver, delivery, connection };
 
         try {
           consumeHook?.(span, consumeInfo);
