@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.0
+
+### Improvements
+
+- Use semantic convention constants instead of hardcoded attribute strings
+- Add local `semconv.ts` with messaging attribute constants (copied from incubating per OTel guidelines)
+- Import stable `ATTR_NETWORK_PEER_ADDRESS` and `ATTR_NETWORK_PEER_PORT` from `@opentelemetry/semantic-conventions`
+- Add diagnostic logging to patch/unpatch methods for troubleshooting
+- Declare Messaging Semantic Conventions v1.29.0 compliance in README
+- Add note about `OTEL_SEMCONV_STABILITY_OPT_IN` migration path
+- Add Azure Service Bus example with `@azure/service-bus`
+- Document `$cbs` internal authentication spans and how to filter them
+- Align `package.json` description with OTel contrib guidelines
+
 ## 0.2.0
 
 ### Breaking changes
