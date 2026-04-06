@@ -1,7 +1,7 @@
 {
   "name": "opentelemetry-instrumentation-rhea",
-  "version": "0.2.0",
-  "description": "OpenTelemetry instrumentation for rhea (AMQP 1.0) with automatic publish/consume tracing and W3C context propagation",
+  "version": "1.0.0",
+  "description": "OpenTelemetry instrumentation for `rhea` AMQP 1.0 messaging client",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": {

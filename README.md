@@ -91,7 +91,9 @@ sender.on('sendable', () => {
 
 ## Semantic conventions
 
-Based on [OpenTelemetry Messaging Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/messaging/) (latest stable).
+This package implements [OpenTelemetry Messaging Semantic Conventions v1.29.0](https://opentelemetry.io/docs/specs/semconv/messaging/).
+
+> **Note:** Messaging semantic conventions are currently in **Development** status. When they are stabilized, this package will implement the `OTEL_SEMCONV_STABILITY_OPT_IN` migration path.
 
 ### Span names
 

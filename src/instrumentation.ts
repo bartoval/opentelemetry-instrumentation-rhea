@@ -17,6 +17,20 @@ import type { Sender, Receiver, Message, EventContext } from 'rhea';
 import type { RheaInstrumentationConfig } from './types';
 import type { RheaLinkModule, DispatchFunction } from './internal-types';
 import {
+  ATTR_NETWORK_PEER_ADDRESS,
+  ATTR_NETWORK_PEER_PORT,
+} from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_MESSAGING_SYSTEM,
+  ATTR_MESSAGING_OPERATION_NAME,
+  ATTR_MESSAGING_OPERATION_TYPE,
+  ATTR_MESSAGING_DESTINATION_NAME,
+  ATTR_MESSAGING_MESSAGE_ID,
+  ATTR_MESSAGING_MESSAGE_CONVERSATION_ID,
+  ATTR_MESSAGING_MESSAGE_BODY_SIZE,
+  ATTR_MESSAGING_CLIENT_ID,
+} from './semconv';
+import {
   getDestinationAddress,
   getPublishSpanName,
   getConsumeSpanName,
@@ -73,6 +87,7 @@ export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentation
     }
 
     this._wrap(prototype, 'send', this._getSendPatch(moduleExports));
+    this._diag.debug('Patched Sender.prototype.send');
   }
 
   private _unpatchSend(moduleExports: RheaLinkModule): void {
@@ -80,6 +95,7 @@ export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentation
 
     if (isWrapped(prototype.send)) {
       this._unwrap(prototype, 'send');
+      this._diag.debug('Unpatched Sender.prototype.send');
     }
   }
 
@@ -91,6 +107,7 @@ export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentation
     }
 
     this._wrap(prototype, 'dispatch', this._getConsumePatch(moduleExports));
+    this._diag.debug('Patched Receiver.prototype.dispatch');
   }
 
   private _unpatchConsume(moduleExports: RheaLinkModule): void {
@@ -98,6 +115,7 @@ export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentation
 
     if (isWrapped(prototype.dispatch)) {
       this._unwrap(prototype, 'dispatch');
+      this._diag.debug('Unpatched Receiver.prototype.dispatch');
     }
   }
 
@@ -126,43 +144,43 @@ export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentation
         const span = instrumentation.tracer.startSpan(getPublishSpanName(address), {
           kind: SpanKind.PRODUCER,
           attributes: {
-            'messaging.system': 'amqp',
-            'messaging.operation.name': 'publish',
-            'messaging.operation.type': 'publish',
-            'messaging.destination.name': address,
+            [ATTR_MESSAGING_SYSTEM]: 'amqp',
+            [ATTR_MESSAGING_OPERATION_NAME]: 'publish',
+            [ATTR_MESSAGING_OPERATION_TYPE]: 'publish',
+            [ATTR_MESSAGING_DESTINATION_NAME]: address,
           },
         });
 
         if (msg.message_id) {
-          span.setAttribute('messaging.message.id', String(msg.message_id));
+          span.setAttribute(ATTR_MESSAGING_MESSAGE_ID, String(msg.message_id));
         }
 
         if (msg.correlation_id) {
-          span.setAttribute('messaging.message.conversation_id', String(msg.correlation_id));
+          span.setAttribute(ATTR_MESSAGING_MESSAGE_CONVERSATION_ID, String(msg.correlation_id));
         }
 
         const bodySize = getMessageBodySize(msg);
 
         if (bodySize !== undefined) {
-          span.setAttribute('messaging.message.body.size', bodySize);
+          span.setAttribute(ATTR_MESSAGING_MESSAGE_BODY_SIZE, bodySize);
         }
 
         const peerAddress = getNetworkPeerAddress(connection);
 
         if (peerAddress) {
-          span.setAttribute('network.peer.address', peerAddress);
+          span.setAttribute(ATTR_NETWORK_PEER_ADDRESS, peerAddress);
         }
 
         const peerPort = getNetworkPeerPort(connection);
 
         if (peerPort) {
-          span.setAttribute('network.peer.port', peerPort);
+          span.setAttribute(ATTR_NETWORK_PEER_PORT, peerPort);
         }
 
         const containerId = getContainerId(connection);
 
         if (containerId) {
-          span.setAttribute('messaging.client.id', containerId);
+          span.setAttribute(ATTR_MESSAGING_CLIENT_ID, containerId);
         }
 
         try {
@@ -240,10 +258,10 @@ export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentation
           {
             kind: SpanKind.CONSUMER,
             attributes: {
-              'messaging.system': 'amqp',
-              'messaging.operation.name': 'receive',
-              'messaging.operation.type': 'receive',
-              'messaging.destination.name': address,
+              [ATTR_MESSAGING_SYSTEM]: 'amqp',
+              [ATTR_MESSAGING_OPERATION_NAME]: 'receive',
+              [ATTR_MESSAGING_OPERATION_TYPE]: 'receive',
+              [ATTR_MESSAGING_DESTINATION_NAME]: address,
             },
             links,
           },
@@ -251,35 +269,35 @@ export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentation
         );
 
         if (msg.message_id) {
-          span.setAttribute('messaging.message.id', String(msg.message_id));
+          span.setAttribute(ATTR_MESSAGING_MESSAGE_ID, String(msg.message_id));
         }
 
         if (msg.correlation_id) {
-          span.setAttribute('messaging.message.conversation_id', String(msg.correlation_id));
+          span.setAttribute(ATTR_MESSAGING_MESSAGE_CONVERSATION_ID, String(msg.correlation_id));
         }
 
         const bodySize = getMessageBodySize(msg);
 
         if (bodySize !== undefined) {
-          span.setAttribute('messaging.message.body.size', bodySize);
+          span.setAttribute(ATTR_MESSAGING_MESSAGE_BODY_SIZE, bodySize);
         }
 
         const peerAddress = getNetworkPeerAddress(connection);
 
         if (peerAddress) {
-          span.setAttribute('network.peer.address', peerAddress);
+          span.setAttribute(ATTR_NETWORK_PEER_ADDRESS, peerAddress);
         }
 
         const peerPort = getNetworkPeerPort(connection);
 
         if (peerPort) {
-          span.setAttribute('network.peer.port', peerPort);
+          span.setAttribute(ATTR_NETWORK_PEER_PORT, peerPort);
         }
 
         const containerId = getContainerId(connection);
 
         if (containerId) {
-          span.setAttribute('messaging.client.id', containerId);
+          span.setAttribute(ATTR_MESSAGING_CLIENT_ID, containerId);
         }
 
         const consumeInfo = { msg, receiver, delivery, connection };
