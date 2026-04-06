@@ -8,6 +8,7 @@
 | 04 | [Custom hooks](./04-custom-hooks.ts) | None (in-process) | Enriching spans with app data |
 | 05 | [Express to AMQP](./05-express-to-amqp.ts) | None (in-process) | Full HTTP-to-AMQP distributed trace |
 | 06 | [RabbitMQ](./06-rabbitmq.ts) | RabbitMQ (Docker) | RabbitMQ with AMQP 1.0 plugin |
+| 07 | [Azure Service Bus](./07-azure-service-bus.ts) | Azure account | Real cloud broker, @azure/service-bus SDK |
 
 ## Prerequisites
 
@@ -112,3 +113,24 @@ npx ts-node examples/06-rabbitmq.ts
 ```
 
 **Output**: Spans showing send/receive through RabbitMQ using the AMQP 1.0 protocol.
+
+## 07 - Azure Service Bus
+
+Requires an Azure account with a Service Bus namespace (Standard tier).
+
+Set environment variables:
+
+```bash
+export SERVICEBUS_CONNECTION_STRING="Endpoint=sb://your-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=..."
+export SERVICEBUS_QUEUE_NAME="test-queue"
+```
+
+Run the example:
+
+```bash
+npx ts-node examples/07-azure-service-bus.ts
+```
+
+**Output**: Publish and consume spans for `test-queue`, plus internal `$cbs` authentication spans (normal for Azure Service Bus). The example filters and reports both types separately.
+
+**Note**: Since `@azure/service-bus` manages AMQP connections internally, the consumer span will have a different `traceId` than the producer span. This is a known behavior of the Azure SDK's receive path. Context propagation works correctly when using `rhea` directly (see examples 01-06).

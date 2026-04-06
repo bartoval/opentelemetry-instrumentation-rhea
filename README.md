@@ -129,6 +129,27 @@ This instrumentation hooks into `rhea` at runtime, so any library built on top o
 
 Compatible with Azure Service Bus, Azure Event Hubs, ActiveMQ Artemis, Solace, and other AMQP 1.0-compliant brokers.
 
+### Note on Azure Service Bus internal spans
+
+When used with Azure Service Bus, you may see additional spans for the `$cbs` AMQP link. This is the internal authentication mechanism used by the Azure SDK to exchange SAS tokens. These spans are legitimate AMQP operations instrumented by this package.
+
+To filter them out in your application, use the `publishHook` and `consumeHook`:
+
+```typescript
+new RheaInstrumentation({
+  publishHook: (span, { sender }) => {
+    if (sender.target?.address?.startsWith('$')) {
+      span.setAttribute('messaging.azure.internal', true);
+    }
+  },
+  consumeHook: (span, { receiver }) => {
+    if (receiver.source?.address?.startsWith('$')) {
+      span.setAttribute('messaging.azure.internal', true);
+    }
+  },
+});
+```
+
 ## Supported versions
 
 - rhea: `>=1.0.0 <4` (tested with v3.x)
