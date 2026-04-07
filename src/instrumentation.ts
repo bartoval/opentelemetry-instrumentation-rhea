@@ -47,6 +47,16 @@ const RHEA_MODULE_NAME = 'rhea';
 const RHEA_LINK_MODULE = 'rhea/lib/link.js';
 const SUPPORTED_VERSIONS = ['>=1.0.0 <4'];
 
+const ATTR_ERROR_TYPE = 'error.type' as const;
+
+const getErrorType = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.constructor.name || 'Error';
+  }
+
+  return typeof error === 'string' ? 'string' : 'Error';
+};
+
 export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentationConfig> {
   constructor(config: RheaInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -87,7 +97,6 @@ export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentation
     }
 
     this._wrap(prototype, 'send', this._getSendPatch(moduleExports));
-    this._diag.debug('Patched Sender.prototype.send');
   }
 
   private _unpatchSend(moduleExports: RheaLinkModule): void {
@@ -95,7 +104,6 @@ export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentation
 
     if (isWrapped(prototype.send)) {
       this._unwrap(prototype, 'send');
-      this._diag.debug('Unpatched Sender.prototype.send');
     }
   }
 
@@ -107,7 +115,6 @@ export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentation
     }
 
     this._wrap(prototype, 'dispatch', this._getConsumePatch(moduleExports));
-    this._diag.debug('Patched Receiver.prototype.dispatch');
   }
 
   private _unpatchConsume(moduleExports: RheaLinkModule): void {
@@ -115,7 +122,6 @@ export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentation
 
     if (isWrapped(prototype.dispatch)) {
       this._unwrap(prototype, 'dispatch');
-      this._diag.debug('Unpatched Receiver.prototype.dispatch');
     }
   }
 
@@ -184,7 +190,11 @@ export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentation
         }
 
         try {
-          publishHook?.(span, { msg, sender, connection });
+          publishHook?.(span, {
+            msg: msg as unknown as Record<string, unknown>,
+            sender: sender as unknown as Record<string, unknown>,
+            connection: connection as unknown as Record<string, unknown>,
+          });
         } catch (hookError) {
           instrumentation._diag.error('publishHook error', hookError);
         }
@@ -199,6 +209,7 @@ export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentation
 
           return result;
         } catch (error) {
+          span.setAttribute(ATTR_ERROR_TYPE, getErrorType(error));
           span.setStatus({
             code: SpanStatusCode.ERROR,
             message: error instanceof Error ? error.message : String(error),
@@ -216,8 +227,9 @@ export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentation
 
     return (original: DispatchFunction): DispatchFunction => {
       return function patchedDispatch(this: Receiver, name: string, eventContext?: EventContext) {
-        const { enabled, useLinksForConsume, consumeHook, consumeEndHook } =
-          instrumentation.getConfig();
+        const config = instrumentation.getConfig();
+        const { enabled, consumeHook, consumeEndHook } = config;
+        const useLinksForConsume = config.useLinksForConsume ?? true;
 
         if (name !== 'message' || !enabled) {
           return original.call(this, name, eventContext);
@@ -241,9 +253,10 @@ export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentation
         );
 
         const links: Link[] = [];
-        let parentContext = context.active();
+        let parentContext;
 
         if (useLinksForConsume) {
+          parentContext = ROOT_CONTEXT;
           const extractedSpanContext = trace.getSpanContext(extractedContext);
 
           if (extractedSpanContext) {
@@ -259,8 +272,8 @@ export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentation
             kind: SpanKind.CONSUMER,
             attributes: {
               [ATTR_MESSAGING_SYSTEM]: 'amqp',
-              [ATTR_MESSAGING_OPERATION_NAME]: 'receive',
-              [ATTR_MESSAGING_OPERATION_TYPE]: 'receive',
+              [ATTR_MESSAGING_OPERATION_NAME]: 'process',
+              [ATTR_MESSAGING_OPERATION_TYPE]: 'process',
               [ATTR_MESSAGING_DESTINATION_NAME]: address,
             },
             links,
@@ -300,7 +313,12 @@ export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentation
           span.setAttribute(ATTR_MESSAGING_CLIENT_ID, containerId);
         }
 
-        const consumeInfo = { msg, receiver, delivery, connection };
+        const consumeInfo = {
+          msg: msg as unknown as Record<string, unknown>,
+          receiver: receiver as unknown as Record<string, unknown>,
+          delivery: delivery as unknown as Record<string, unknown> | undefined,
+          connection: connection as unknown as Record<string, unknown>,
+        };
 
         try {
           consumeHook?.(span, consumeInfo);
@@ -314,6 +332,7 @@ export class RheaInstrumentation extends InstrumentationBase<RheaInstrumentation
         try {
           result = context.with(spanContext, () => original.call(receiver, name, eventContext));
         } catch (error) {
+          span.setAttribute(ATTR_ERROR_TYPE, getErrorType(error));
           span.setStatus({
             code: SpanStatusCode.ERROR,
             message: error instanceof Error ? error.message : String(error),

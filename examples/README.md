@@ -94,7 +94,7 @@ curl -X POST http://localhost:3000/order \
 ```
 HTTP POST /order
   └── orders-queue publish
-      └── orders-queue receive
+      └── orders-queue process
           └── process-order
 ```
 

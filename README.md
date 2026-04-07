@@ -81,7 +81,7 @@ sender.on('sendable', () => {
 | `publishHook` | `(span, info) => void` | - | Called before a publish span ends. Use to add custom attributes. |
 | `consumeHook` | `(span, info) => void` | - | Called when a message is consumed, before the user handler runs. |
 | `consumeEndHook` | `(span, info) => void` | - | Called when a consume span ends. |
-| `useLinksForConsume` | `boolean` | `false` | If `true`, consumer spans are new root traces with a link to the producer span, instead of being children. |
+| `useLinksForConsume` | `boolean` | `true` | If `true` (default), consumer spans are new root traces with a link to the producer span. Set to `false` for parent-child behavior. |
 
 ### Hook info objects
 
@@ -98,15 +98,15 @@ This package implements [OpenTelemetry Messaging Semantic Conventions v1.29.0](h
 ### Span names
 
 - Publish: `<destination> publish`
-- Consume: `<destination> receive`
+- Consume: `<destination> process`
 
 ### Attributes
 
 | Attribute | Value |
 | --- | --- |
 | `messaging.system` | `amqp` |
-| `messaging.operation.name` | `publish` or `receive` |
-| `messaging.operation.type` | `publish` or `receive` |
+| `messaging.operation.name` | `publish` or `process` |
+| `messaging.operation.type` | `publish` or `process` |
 | `messaging.destination.name` | Target/source address |
 | `messaging.message.id` | `message.message_id` (if present) |
 | `messaging.message.conversation_id` | `message.correlation_id` (if present) |

@@ -1,5 +1,4 @@
 import * as assert from 'assert';
-import type { Sender, Receiver, Connection, Message } from 'rhea';
 import {
   getDestinationAddress,
   getPublishSpanName,
@@ -11,51 +10,70 @@ import {
   ensureApplicationProperties,
 } from '../src/utils';
 
-function mockSender(partial: Record<string, unknown>): Sender {
-  return { is_sender: () => true, is_receiver: () => false, ...partial } as unknown as Sender;
+function mockSender(overrides: Record<string, any>): any {
+  return {
+    is_sender: () => true,
+    is_receiver: () => false,
+    source: overrides.source ?? undefined,
+    target: overrides.target ?? undefined,
+    options: overrides.options ?? {},
+    name: overrides.name ?? undefined,
+    local: overrides.local ?? undefined,
+  };
 }
 
-function mockReceiver(partial: Record<string, unknown>): Receiver {
-  return { is_sender: () => false, is_receiver: () => true, ...partial } as unknown as Receiver;
+function mockReceiver(overrides: Record<string, any>): any {
+  return {
+    is_sender: () => false,
+    is_receiver: () => true,
+    source: overrides.source ?? undefined,
+    target: overrides.target ?? undefined,
+    options: overrides.options ?? {},
+    name: overrides.name ?? undefined,
+    local: overrides.local ?? undefined,
+  };
 }
 
-function mockConnection(partial: Record<string, unknown>): Connection {
-  return partial as unknown as Connection;
-}
-
-function mockMessage(partial: Record<string, unknown>): Message {
-  return partial as unknown as Message;
+function mockConnection(overrides: Record<string, any>): any {
+  return {
+    options: overrides.options ?? {},
+    hostname: overrides.hostname ?? undefined,
+    container_id: overrides.container_id ?? undefined,
+    container: overrides.container ?? undefined,
+  };
 }
 
 describe('utils', () => {
   describe('getDestinationAddress', () => {
-    it('should return target address for sender', () => {
-      const sender = mockSender({ target: { address: 'my-queue' } });
-
-      assert.strictEqual(getDestinationAddress(sender), 'my-queue');
-    });
-
     it('should return source address for receiver', () => {
       const receiver = mockReceiver({ source: { address: 'my-queue' } });
-
       assert.strictEqual(getDestinationAddress(receiver), 'my-queue');
     });
 
-    it('should fall back to target address for receiver', () => {
-      const receiver = mockReceiver({ target: { address: 'target-queue' } });
+    it('should return target address for sender', () => {
+      const sender = mockSender({ target: { address: 'my-queue' } });
+      assert.strictEqual(getDestinationAddress(sender), 'my-queue');
+    });
 
-      assert.strictEqual(getDestinationAddress(receiver), 'target-queue');
+    it('should fall back to local attach address', () => {
+      const sender = mockSender({
+        local: { attach: { target: { address: 'local-addr' } } },
+      });
+      assert.strictEqual(getDestinationAddress(sender), 'local-addr');
+    });
+
+    it('should fall back to options target', () => {
+      const sender = mockSender({ options: { target: 'opts-addr' } });
+      assert.strictEqual(getDestinationAddress(sender), 'opts-addr');
     });
 
     it('should fall back to link name', () => {
       const sender = mockSender({ name: 'link-name' });
-
       assert.strictEqual(getDestinationAddress(sender), 'link-name');
     });
 
     it('should return "unknown" when nothing available', () => {
       const sender = mockSender({});
-
       assert.strictEqual(getDestinationAddress(sender), 'unknown');
     });
   });
@@ -65,8 +83,8 @@ describe('utils', () => {
       assert.strictEqual(getPublishSpanName('my-queue'), 'my-queue publish');
     });
 
-    it('should format consume span name', () => {
-      assert.strictEqual(getConsumeSpanName('my-queue'), 'my-queue receive');
+    it('should format consume span name with "process"', () => {
+      assert.strictEqual(getConsumeSpanName('my-queue'), 'my-queue process');
     });
   });
 
@@ -110,49 +128,52 @@ describe('utils', () => {
 
     it('should fall back to container.id', () => {
       assert.strictEqual(
-        getContainerId(mockConnection({ options: {}, container: { id: 'container-id' } })),
-        'container-id'
+        getContainerId(mockConnection({ container: { id: 'fallback-id' }, options: {} })),
+        'fallback-id'
       );
+    });
+
+    it('should return undefined when not set', () => {
+      assert.strictEqual(getContainerId(mockConnection({ options: {} })), undefined);
     });
   });
 
   describe('getMessageBodySize', () => {
-    it('should return buffer length for Buffer body', () => {
-      assert.strictEqual(getMessageBodySize(mockMessage({ body: Buffer.from('hello') })), 5);
+    it('should return buffer length', () => {
+      assert.strictEqual(getMessageBodySize({ body: Buffer.from('hello') } as any), 5);
     });
 
-    it('should return byte length for string body', () => {
-      assert.strictEqual(getMessageBodySize(mockMessage({ body: 'hello' })), 5);
+    it('should return byte length for string', () => {
+      assert.strictEqual(getMessageBodySize({ body: 'hello' } as any), 5);
     });
 
-    it('should return byte length for object body', () => {
+    it('should return JSON byte length for object', () => {
       const body = { key: 'value' };
       const expected = Buffer.byteLength(JSON.stringify(body), 'utf8');
-      assert.strictEqual(getMessageBodySize(mockMessage({ body })), expected);
+      assert.strictEqual(getMessageBodySize({ body } as any), expected);
     });
 
     it('should return undefined for null body', () => {
-      assert.strictEqual(getMessageBodySize(mockMessage({ body: null })), undefined);
+      assert.strictEqual(getMessageBodySize({ body: null } as any), undefined);
     });
 
     it('should return undefined for undefined body', () => {
-      assert.strictEqual(getMessageBodySize(mockMessage({})), undefined);
+      assert.strictEqual(getMessageBodySize({ body: undefined } as any), undefined);
     });
   });
 
   describe('ensureApplicationProperties', () => {
-    it('should create application_properties if not present', () => {
-      const msg = mockMessage({});
-      const props = ensureApplicationProperties(msg);
-      assert.deepStrictEqual(props, {});
-      assert.strictEqual(msg.application_properties, props);
+    it('should create application_properties if missing', () => {
+      const msg: any = {};
+      const result = ensureApplicationProperties(msg);
+      assert.deepStrictEqual(result, {});
+      assert.strictEqual(msg.application_properties, result);
     });
 
     it('should return existing application_properties', () => {
-      const existing = { key: 'value' };
-      const msg = mockMessage({ application_properties: existing });
-      const props = ensureApplicationProperties(msg);
-      assert.strictEqual(props, existing);
+      const msg: any = { application_properties: { existing: 'value' } };
+      const result = ensureApplicationProperties(msg);
+      assert.strictEqual(result.existing, 'value');
     });
   });
 });

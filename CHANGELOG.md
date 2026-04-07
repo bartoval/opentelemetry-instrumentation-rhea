@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0
+
+### Changes
+
+- `useLinksForConsume` now defaults to `true` per OTel Messaging Semantic Conventions v1.29+
+- Consumer operation type changed from `receive` to `process` (push-based delivery)
+- Consumer span name changed from `<dest> receive` to `<dest> process`
+- Add `error.type` attribute on error spans per OTel semconv recording-errors guidelines
+
 ## 1.0.0
 
 ### Improvements

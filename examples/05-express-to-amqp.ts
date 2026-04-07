@@ -71,6 +71,6 @@ amqpServer.on('listening', () => {
   app.listen(httpPort, () => {
     console.log(`\n[http] Express server listening on http://localhost:${httpPort}`);
     console.log(`\nTry: curl -X POST http://localhost:${httpPort}/order -H 'Content-Type: application/json' -d '{"item":"Widget","qty":3}'`);
-    console.log('\nThe trace will flow: HTTP POST /order -> orders-queue publish -> orders-queue receive -> process-order');
+    console.log('\nThe trace will flow: HTTP POST /order -> orders-queue publish -> orders-queue process -> process-order');
   });
 });

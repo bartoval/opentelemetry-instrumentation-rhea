@@ -112,7 +112,7 @@ describe('RheaInstrumentation', () => {
     }, 500);
   });
 
-  it('should create a consume span when receiving a message', (done) => {
+  it('should create a consume span with "process" operation type', (done) => {
     const messagePromise = waitForMessage(broker.receiverContainer);
     broker.sender.send({ body: 'test-message' });
 
@@ -120,23 +120,24 @@ describe('RheaInstrumentation', () => {
       setTimeout(() => {
         const spans = memoryExporter.getFinishedSpans();
         const consumeSpan = spans.find(
-          (span) => span.attributes['messaging.operation.type'] === 'receive'
+          (span) => span.attributes['messaging.operation.type'] === 'process'
         );
 
         assert.ok(consumeSpan, 'consume span should exist');
         assert.strictEqual(consumeSpan.kind, SpanKind.CONSUMER);
-        assert.strictEqual(consumeSpan.name, 'test-queue receive');
+        assert.strictEqual(consumeSpan.name, 'test-queue process');
         assert.strictEqual(consumeSpan.attributes['messaging.system'], 'amqp');
-        assert.strictEqual(consumeSpan.attributes['messaging.operation.name'], 'receive');
+        assert.strictEqual(consumeSpan.attributes['messaging.operation.name'], 'process');
+        assert.strictEqual(consumeSpan.attributes['messaging.operation.type'], 'process');
         assert.strictEqual(consumeSpan.attributes['messaging.destination.name'], 'test-queue');
         done();
       }, 200);
     });
   });
 
-  it('should propagate context from producer to consumer (parent-child)', (done) => {
+  it('should use links by default to correlate producer and consumer', (done) => {
     const messagePromise = waitForMessage(broker.receiverContainer);
-    broker.sender.send({ body: 'test-propagation' });
+    broker.sender.send({ body: 'test-default-links' });
 
     messagePromise.then(() => {
       setTimeout(() => {
@@ -145,7 +146,48 @@ describe('RheaInstrumentation', () => {
           (span) => span.attributes['messaging.operation.type'] === 'publish'
         );
         const consumeSpan = spans.find(
-          (span) => span.attributes['messaging.operation.type'] === 'receive'
+          (span) => span.attributes['messaging.operation.type'] === 'process'
+        );
+
+        assert.ok(publishSpan, 'publish span should exist');
+        assert.ok(consumeSpan, 'consume span should exist');
+
+        assert.strictEqual(
+          consumeSpan.parentSpanContext,
+          undefined,
+          'consume span should be root (no parent) in link mode'
+        );
+
+        assert.ok(consumeSpan.links.length > 0, 'consume span should have links');
+        assert.strictEqual(
+          consumeSpan.links[0].context.traceId,
+          publishSpan.spanContext().traceId,
+          'link should reference producer trace'
+        );
+        assert.strictEqual(
+          consumeSpan.links[0].context.spanId,
+          publishSpan.spanContext().spanId,
+          'link should reference producer span'
+        );
+        done();
+      }, 200);
+    });
+  });
+
+  it('should use parent-child when useLinksForConsume is false', (done) => {
+    instrumentation.setConfig({ useLinksForConsume: false });
+
+    const messagePromise = waitForMessage(broker.receiverContainer);
+    broker.sender.send({ body: 'test-parent-child' });
+
+    messagePromise.then(() => {
+      setTimeout(() => {
+        const spans = memoryExporter.getFinishedSpans();
+        const publishSpan = spans.find(
+          (span) => span.attributes['messaging.operation.type'] === 'publish'
+        );
+        const consumeSpan = spans.find(
+          (span) => span.attributes['messaging.operation.type'] === 'process'
         );
 
         assert.ok(publishSpan, 'publish span should exist');
@@ -160,47 +202,6 @@ describe('RheaInstrumentation', () => {
           consumeSpan.parentSpanContext?.spanId,
           publishSpan.spanContext().spanId,
           'consume span should be child of publish span'
-        );
-        done();
-      }, 200);
-    });
-  });
-
-  it('should use links instead of parent-child when useLinksForConsume is true', (done) => {
-    instrumentation.setConfig({ useLinksForConsume: true });
-
-    const messagePromise = waitForMessage(broker.receiverContainer);
-    broker.sender.send({ body: 'test-links' });
-
-    messagePromise.then(() => {
-      setTimeout(() => {
-        const spans = memoryExporter.getFinishedSpans();
-        const publishSpan = spans.find(
-          (span) => span.attributes['messaging.operation.type'] === 'publish'
-        );
-        const consumeSpan = spans.find(
-          (span) => span.attributes['messaging.operation.type'] === 'receive'
-        );
-
-        assert.ok(publishSpan, 'publish span should exist');
-        assert.ok(consumeSpan, 'consume span should exist');
-
-        assert.notStrictEqual(
-          consumeSpan.parentSpanContext?.spanId,
-          publishSpan.spanContext().spanId,
-          'consume span should NOT be child of publish span'
-        );
-
-        assert.ok(consumeSpan.links.length > 0, 'consume span should have links');
-        assert.strictEqual(
-          consumeSpan.links[0].context.traceId,
-          publishSpan.spanContext().traceId,
-          'link should reference producer trace'
-        );
-        assert.strictEqual(
-          consumeSpan.links[0].context.spanId,
-          publishSpan.spanContext().spanId,
-          'link should reference producer span'
         );
         done();
       }, 200);
@@ -263,7 +264,7 @@ describe('RheaInstrumentation', () => {
 
         const spans = memoryExporter.getFinishedSpans();
         const consumeSpan = spans.find(
-          (span) => span.attributes['messaging.operation.type'] === 'receive'
+          (span) => span.attributes['messaging.operation.type'] === 'process'
         );
         assert.strictEqual(consumeSpan?.attributes['app.consume'], 'hook-value');
         assert.strictEqual(consumeSpan?.attributes['app.consume_end'], 'end-value');
@@ -280,7 +281,7 @@ describe('RheaInstrumentation', () => {
       setTimeout(() => {
         const spans = memoryExporter.getFinishedSpans();
         const consumeSpan = spans.find(
-          (span) => span.attributes['messaging.operation.type'] === 'receive'
+          (span) => span.attributes['messaging.operation.type'] === 'process'
         );
         assert.ok(consumeSpan, 'consume span should exist even without traceparent');
         done();
@@ -339,6 +340,7 @@ describe('RheaInstrumentation', () => {
 
     const handler = () => {
       received++;
+
       if (received === messageCount) {
         broker.receiverContainer.removeListener('message', handler);
       }
@@ -355,7 +357,7 @@ describe('RheaInstrumentation', () => {
         (span) => span.attributes['messaging.operation.type'] === 'publish'
       );
       const consumeSpans = spans.filter(
-        (span) => span.attributes['messaging.operation.type'] === 'receive'
+        (span) => span.attributes['messaging.operation.type'] === 'process'
       );
 
       assert.strictEqual(

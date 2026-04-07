@@ -50,7 +50,7 @@ export const getDestinationAddress = (link: Link): string => {
 
 export const getPublishSpanName = (address: string): string => `${address} publish`;
 
-export const getConsumeSpanName = (address: string): string => `${address} receive`;
+export const getConsumeSpanName = (address: string): string => `${address} process`;
 
 export const getNetworkPeerAddress = (connection: Connection): string | undefined => {
   const options = connection.options as unknown as Record<string, unknown>;
